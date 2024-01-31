@@ -1,30 +1,80 @@
 import csv
 import sys
 
+import numpy as np
 import pandas as pd
 import sklearn.metrics
+from bertopic import BERTopic
 from gensim.corpora.dictionary import Dictionary
-from gensim.models import LdaModel
 from gensim.models.coherencemodel import CoherenceModel
-# from gensim.models import CoherenceModel
-# from octis.evaluation_metrics.coherence_metrics import Coherence
-# from octis.evaluation_metrics.diversity_metrics import TopicDiversity
-from settings import Settings
 
 sys.path.append("..")
 from diversity_metrics import TopicDiversity
+from lda.settings import Settings
 from topic_modeling_diffusion.src.topicmodeling.preprocess import TextProcessor
 
-predicted_csv_file = Settings.predicted_csv_file
-category_column = Settings.category_column
-body_column = Settings.body_column
-lda_file = Settings.lda_file
-dictionary_file = Settings.dictionary_file
 csv_file = Settings.csv_file
+body_column = Settings.body_column
+category_column = Settings.category_column
+dictionary_file = Settings.dictionary_file
 
-news = pd.read_csv(predicted_csv_file, dtype=str)
+topic_model = BERTopic.load("bertmodel.bin")
+news = pd.read_csv(csv_file, dtype=str)
+
+list_of_sentences = []
+
+with open(csv_file, "r", encoding="utf-8") as fd:
+    reader = csv.DictReader(fd)
+    for row in reader:
+        list_of_sentences.append(row[body_column])
+
+# Pre-process
+text_processor = TextProcessor(list_of_sentences)
+del list_of_sentences
+text_processor.lemmatize_sentences()
+lemmatized_sentences = text_processor.lemmatized_sentences
+lemmatized_sentences_str = [' '.join(x) for x in lemmatized_sentences]
+
+
+print("Topics:")
+print(topic_model.generate_topic_labels())
+
+print("Probs:")
+print(topic_model.probabilities_)
+print("")
+
+print("Topic labels:")
+print(topic_model.topic_labels_)
+print("")
+
+print("Topic info:")
+print(topic_model.get_topic_info())
+print("")
+
+print("Topic terms:")
+print(topic_model.get_topics())
+print("")
+
+print("Topic 0:")
+print(topic_model.get_topic(0))
+print("")
+
+print("Document info:")
+print(topic_model.get_document_info(lemmatized_sentences_str))
+print("")
+
+# print("Visualize topics:")
+# print(topic_model.visualize_topics())
+# print("")
+
+# print("Visualize docs:")
+# print(topic_model.visualize_documents(lemmatized_sentences_str))
+# print("")
+
+news['prediction'] = topic_model.topics_
 news['prediction'] = news['prediction'].apply(lambda x: int(float(x)))
 
+## from p4_evaluation.py
 # Purity Score
 news_gb = (
     news.groupby(["prediction", category_column])[body_column].count().reset_index()
@@ -49,24 +99,9 @@ print(news_res)
 print("Purity: {:.2f}%".format(news_res[body_column].sum() * 100 / len(news)))
 
 # Topic Coherence (TC) Score
-lda = LdaModel.load(lda_file)
 dictionary = Dictionary.load(dictionary_file)
 
-list_of_sentences = []
-
 ## from p2_lda.py
-with open(csv_file, "r", encoding="utf-8") as fd:
-    reader = csv.DictReader(fd)
-    for row in reader:
-        list_of_sentences.append(row[body_column])
-
-# Pre-process
-print("Length of list_of_sentences:", len(list_of_sentences))
-print("Size of list_of_sentences:", sys.getsizeof(list_of_sentences))
-text_processor = TextProcessor(list_of_sentences)
-del list_of_sentences
-text_processor.lemmatize_sentences()
-lemmatized_sentences = text_processor.lemmatized_sentences
 
 # To bag-of-words
 dictionary = Dictionary(lemmatized_sentences)
@@ -74,17 +109,10 @@ corpus = [dictionary.doc2bow(text) for text in lemmatized_sentences]
 ## end of p2_lda.py
 
 # coherence_model_lda = CoherenceModel(
-#     model=lda, texts=list_of_sentences, dictionary=dictionary, coherence="c_v"
-# ) # nan
-coherence_model_lda = CoherenceModel(
-    model=lda, texts=lemmatized_sentences, dictionary=dictionary, coherence="c_v"
-) # Coherence Score: 0.5473630539637532
-# coherence_model_lda = CoherenceModel(
-#     model=lda, corpus=corpus, dictionary=dictionary, coherence="u_mass"
-# ) # Coherence Score: -4.325622798949165
-
-topics_terms = [lda.get_topic_terms(topic) for topic in range(0, lda.num_topics)]
-topics = [[idx for idx, prob in topic] for topic in topics_terms]
+#     model=topic_model, texts=lemmatized_sentences, dictionary=dictionary, coherence="c_v"
+# )
+topics_terms = list(topic_model.get_topics().values())
+topics = [[term for term, prob in topic] for topic in topics_terms]
 coherence_model_lda = CoherenceModel(
     topics=topics,
     texts=lemmatized_sentences,
@@ -95,8 +123,7 @@ coherence_lda = coherence_model_lda.get_coherence()
 print("Topic Coherence Score:", coherence_lda)
 
 # Topic Diversity (TD) Score
-# topics_matrix = lda.get_topics()
-# topics_matrix.T
+# ...
 
 nmi = sklearn.metrics.normalized_mutual_info_score(news[category_column].astype('category').cat.codes, news['prediction'])
 print("Normalized Mutual Info Score", nmi)
@@ -115,14 +142,9 @@ print("F5 (beta=5) (macro) Score", f5)
 
 fowlkes_mallows_score = sklearn.metrics.fowlkes_mallows_score(news[category_column].astype('category').cat.codes, news['prediction'])
 print("Fowlkes-Mallows Score", fowlkes_mallows_score)
+## end of p4_evaluation.py
 
 # OCTIS
-# npmi = Coherence(texts=lemmatized_sentences, topk=10, measure='c_v')
-# topic_diversity = TopicDiversity(topk=10)
-
-# print('TC by OCTIS:', npmi)
-# print('TD by OCTIS:', topic_diversity)
-
 topic_diversity = TopicDiversity(topk=10)
-topic_diversity_score = topic_diversity.score(lda)
+topic_diversity_score = topic_diversity.score(topic_model, model='bertopic')
 print("Topic diversity:", topic_diversity_score)

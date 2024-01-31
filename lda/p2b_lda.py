@@ -13,6 +13,7 @@ lda = LdaModel.load(lda_file)
 dictionary = Dictionary.load(dictionary_file)
 
 print("Topics:")
+print(len(lda.get_topics()))
 print(len(lda.get_topics()[0]))
 print(lda.get_topics())
 print("")
