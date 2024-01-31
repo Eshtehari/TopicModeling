@@ -10,8 +10,12 @@ class Settings:
     csv_file = os.path.join(pardir, "newsSpace_cleaned.csv")
     category_column = "category"
     body_column = "description"
+    title_column = "title"
     lda_file = datapath("lda_model.bin")
     dictionary_file = os.path.join(pardir, "train.dict")
+    # Had to switch to Python 3.8.18 to install OCTIS, Gensim couldn't load model from Python 3.11.5. Upgraded from gensim 4.2.0 to 4.3.2 to no avail. Had to re-train but Octis didn't work after retrain anyways.
+    # lda_file = os.path.join("..", "data", "old_gensim", "lda_model.bin")
+    # dictionary_file = os.path.join("..", "data", "old_gensim", "train.dict")
     # lda model also saves dictionary!
     # dictionary_file = datapath("lda_model.bin.id2word")
     predicted_csv_file = os.path.join(pardir, "predicted_news.csv")
