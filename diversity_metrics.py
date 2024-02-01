@@ -6,6 +6,7 @@ from gensim.models import LdaModel
 
 class TopicDiversity():
     """
+    Original authors: https://github.com/MIND-Lab/OCTIS/
     Editor: Shayan
     """
     
