@@ -19,7 +19,7 @@ category_column = Settings.category_column
 dictionary_file = Settings.dictionary_file
 title_column = Settings.title_column
 
-topic_model = BERTopic.load("bertmodel.bin")
+topic_model = BERTopic.load("../data/bertmodel.bin")
 news = pd.read_csv(csv_file, dtype=str)
 
 list_of_sentences = []

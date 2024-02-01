@@ -31,8 +31,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 topic_model = BERTopic(nr_topics=14)
 topics, probs = topic_model.fit_transform(lemmatized_sentences)
 
-topic_model.save("bertmodel.bin")
-print("Saved model in", "bertmodel.bin")
+topic_model.save("../data/bertmodel.bin")
+print("Saved model in", "../data/bertmodel.bin")
 
 print("Topics:")
 print(topics)
