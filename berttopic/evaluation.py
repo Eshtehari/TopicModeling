@@ -17,6 +17,7 @@ csv_file = Settings.csv_file
 body_column = Settings.body_column
 category_column = Settings.category_column
 dictionary_file = Settings.dictionary_file
+title_column = Settings.title_column
 
 topic_model = BERTopic.load("bertmodel.bin")
 news = pd.read_csv(csv_file, dtype=str)
@@ -50,6 +51,11 @@ print("")
 print("Topic info:")
 print(topic_model.get_topic_info())
 print("")
+
+for rep in topic_model.representative_docs_.values():
+    # It suggests 3 representative docs
+    topic_index = lemmatized_sentences_str.index(rep[0])
+    print(topic_index, "\t"+news.loc[topic_index, title_column], "\t["+news.loc[topic_index, category_column]+"]")
 
 print("Topic terms:")
 print(topic_model.get_topics())

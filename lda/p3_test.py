@@ -23,6 +23,8 @@ dictionary_file = Settings.dictionary_file
 lda = LdaModel.load(lda_file)
 
 news = pd.read_csv(csv_file, dtype=str)
+# news = news.reset_index(drop=True)
+
 # news_train = news[0 : int(len(news) * 0.8)]
 # news_test = news[int(len(news) * 0.8) : len(news)]
 # print("Len of news:", len(news))
@@ -34,8 +36,6 @@ text_processor = TextProcessor([""])
 
 # print(lda.show_topics())
 # print(len(lda.show_topics()))
-
-news = news.loc[0:100]
 
 def single_process():
     lemmatized_sentences = []
@@ -113,13 +113,14 @@ top_topics = lda.top_topics(texts=lemmatized_sentences, dictionary=dictionary, c
 top_topics = [topic[0] for topic in top_topics]
 print(top_topics)
 print(len(top_topics))
-# print(len(top_topics[0]))
-for topic_index, topic in enumerate(top_topics):
-    most_representative_topic = max(topic, key=lambda x: x[0])[1]
+print(len(top_topics[0]))
+print(len(news))
+for _, topic in enumerate(top_topics):
+    topic_index = int(max(topic, key=lambda x: x[0])[1])
     print(topic_index, "\t"+news.loc[topic_index, title_column], "\t["+news.loc[topic_index, category_column]+"]")
 
 news["prediction"] = predictions
-news["preprocessed_doc"] = lemmatized_sentences
+# news["preprocessed_doc"] = lemmatized_sentences
 
 news.to_csv(predicted_csv_file)
 print("Saved predicted csv in", predicted_csv_file)

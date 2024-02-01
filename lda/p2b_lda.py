@@ -22,12 +22,12 @@ print("")
 # print(lda.get_term_topics(0))
 # print("")
 
-for i in range(0, 13):
-    print("Topic terms:")
+print("Topic terms:")
+for i in range(0, 14):
     topic_terms = lda.get_topic_terms(i)
     topic_terms = [(dictionary[idx], prob) for idx, prob in topic_terms]
     print(topic_terms)
-    print("")
+print("")
 
 # print(dictionary.token2id['hello'])
 
